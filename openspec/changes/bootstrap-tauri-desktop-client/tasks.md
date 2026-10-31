@@ -1,6 +1,6 @@
 ## 1. Каркас (app-shell)
 
-- [ ] 1.1 Создать Tauri 2 проект: `src-tauri/` (Rust) + frontend (TS/Vite), иконки, tauri.conf.json
+- [x] 1.1 Создать Tauri 2 проект: `src-tauri/` (Rust) + frontend (TS/Vite), иконки, tauri.conf.json
 - [ ] 1.2 Layout: сайдбар (Главная/Поиск/Коллекция/Плейлисты/Подкасты) + нижний плеер-бар + контент
 - [ ] 1.3 Проверить `cargo tauri dev` и сборку .app на macOS (реальный запуск)
 
