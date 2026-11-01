@@ -9,5 +9,6 @@ export async function render(host: HTMLElement) {
     host.innerHTML += `<div class="empty">Пусто</div>`;
     return;
   }
-  host.appendChild(buildGridSection({ playlists: podcasts as never }));
+  // Через поле podcasts buildGridSection строит плитки с подписью «Подкаст» и ссылкой #/podcast/:id.
+  host.appendChild(buildGridSection({ title: "Подкасты", podcasts }));
 }

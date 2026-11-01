@@ -1,5 +1,13 @@
 import { searchAll } from "../api/client";
-import { renderTracks } from "../components/ui";
+import { renderTracks, buildGridSection, renderSectionTitle } from "../components/ui";
+
+function debounce<A extends unknown[]>(fn: (...a: A) => void, ms: number) {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return (...a: A) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...a), ms);
+  };
+}
 
 export async function render(host: HTMLElement) {
   host.innerHTML = `
@@ -8,23 +16,28 @@ export async function render(host: HTMLElement) {
     <div id="search-results"></div>`;
   const input = host.querySelector("#search-q") as HTMLInputElement;
   const results = host.querySelector("#search-results") as HTMLElement;
-  let q = "";
-  input.addEventListener("input", async () => {
-    if (input.value.trim().length < 2) return;
-    q = input.value.trim();
+
+  const run = async () => {
+    const q = input.value.trim();
+    if (q.length < 2) {
+      results.innerHTML = "";
+      return;
+    }
     const r = await searchAll(q).catch(() => null);
     if (!r || input.value.trim() !== q) return;
     results.innerHTML = "";
+    let any = false;
     if (r.tracks.length) {
-      const h = document.createElement("div");
-      h.className = "search-section-title";
-      h.textContent = "Треки";
-      results.appendChild(h);
+      results.appendChild(renderSectionTitle("Треки"));
       results.appendChild(renderTracks(r.tracks));
+      any = true;
     }
-    // TODO(views): секции артистов, релизов, плейлистов, подкастов.
-    if (!r.tracks.length && !r.artists.length && !r.releases.length && !r.playlists.length && !r.podcasts.length) {
-      results.innerHTML = `<div class="empty">Ничего не найдено</div>`;
-    }
-  });
+    if (r.artists.length) { results.appendChild(buildGridSection({ title: "Исполнители", artists: r.artists })); any = true; }
+    if (r.releases.length) { results.appendChild(buildGridSection({ title: "Релизы", releases: r.releases })); any = true; }
+    if (r.playlists.length) { results.appendChild(buildGridSection({ title: "Плейлисты", playlists: r.playlists })); any = true; }
+    if (r.podcasts.length) { results.appendChild(buildGridSection({ title: "Подкасты", podcasts: r.podcasts })); any = true; }
+    if (!any) results.innerHTML = `<div class="empty">Ничего не найдено</div>`;
+  };
+  const onInput = debounce(run, 300);
+  input.addEventListener("input", onInput);
 }

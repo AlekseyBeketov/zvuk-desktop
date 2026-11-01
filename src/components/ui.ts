@@ -1,6 +1,6 @@
 import type { Playlist, Release, Track, Artist, Podcast } from "../api/types";
 import { store } from "../store";
-import { getStream } from "../api/client";
+import { getStream, likeTrack } from "../api/client";
 
 /** Загружает поток для трека и ставит его (уже в очереди) на воспроизведение. */
 export async function playTrackInStore(track: Track) {
@@ -21,6 +21,14 @@ const img = (src: string | undefined): string =>
   src
     ? `<img src="${src}" alt="" loading="lazy" onerror="this.style.visibility='hidden'" />`
     : `<div class="tile-imgph"></div>`;
+
+/** Заголовок секции поиска/ленты. */
+export function renderSectionTitle(text: string): HTMLElement {
+  const h = document.createElement("div");
+  h.className = "search-section-title";
+  h.textContent = text;
+  return h;
+}
 
 /** Сетка плиток по блокам ленты/подборок (releases, playlists, tracks, podcasts…) — строит секцию. */
 export function buildGridSection(block: Record<string, unknown>, targetRoutePrefix = ""): HTMLElement {
@@ -95,7 +103,6 @@ export function renderTracks(tracks: Track[]): HTMLElement {
       const liked = !track.isInCollection;
       track.isInCollection = liked;
       like.classList.toggle("on", liked);
-      const { likeTrack } = await import("../api/client");
       likeTrack(track.id, liked).catch(() => {});
     });
     list.appendChild(row);

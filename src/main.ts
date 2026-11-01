@@ -53,6 +53,8 @@ async function navigate() {
 function renderPlayerBar() {
   const root = playerBar();
   const cur = store.current?.track;
+  const repeatLabel =
+    store.repeat === "one" ? "⟳ Один" : store.repeat === "all" ? "⟳ Все" : "⭯ Выкл";
   root.innerHTML = `
     <div class="pb-track">
       ${cur?.image?.src ? `<img src="${cur.image.src}" alt="" />` : `<div class="cover placeholder"></div>`}
@@ -62,17 +64,18 @@ function renderPlayerBar() {
       </div>
     </div>
     <div class="pb-controls">
-      <button class="pb-ctrl" data-act="shuffle" title="Перемешать">⇄</button>
+      <button class="pb-ctrl ${store.shuffle ? "active" : ""}" data-act="shuffle" title="Перемешать">⇄</button>
       <button class="pb-ctrl" data-act="prev" title="Назад">⏮</button>
       <button class="pb-ctrl main" data-act="toggle" title="Play/Pause">${store.isPlaying ? "⏸" : "▶"}</button>
       <button class="pb-ctrl" data-act="next" title="Вперёд">⏭</button>
-      <button class="pb-ctrl" data-act="repeat" title="Повтор">${store.repeat === "one" ? "⟳1" : store.repeat === "all" ? "⟳" : "⭯"}</button>
+      <button class="pb-ctrl ${store.repeat !== "off" ? "active" : ""}" data-act="repeat" title="Повтор">${store.repeat === "one" ? "⟳1" : "⟳"}</button>
     </div>
     <div class="pb-progress">
       <span id="pb-t"></span>
       <input id="pb-seek" type="range" min="0" max="1000" value="0" />
       <span id="pb-d"></span>
-    </div>`;
+    </div>
+    <div class="pb-repeat-label">${repeatLabel}</div>`;
 
   root.querySelectorAll(".pb-ctrl").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -125,11 +128,8 @@ async function startApp() {
   window.addEventListener("hashchange", navigate);
   await navigate();
   renderPlayerBar();
-  // Живое обновление кнопки play и Now Playing
-  store.addEventListener("playing", () => {
-    renderPlayerBar();
-    renderPlayerBar();
-  });
+  // Живое обновление кнопки play и метки режима повтора.
+  store.addEventListener("playing", () => renderPlayerBar());
   store.addEventListener("track", renderPlayerBar);
   store.addEventListener("mode", renderPlayerBar);
 }

@@ -1,5 +1,5 @@
 import { getCollection } from "../api/client";
-import { renderTracks } from "../components/ui";
+import { renderTracks, buildGridSection } from "../components/ui";
 
 export async function render(host: HTMLElement) {
   host.innerHTML = `<h2>Коллекция</h2><div class="empty">Загрузка…</div>`;
@@ -10,5 +10,10 @@ export async function render(host: HTMLElement) {
   }
   host.innerHTML = `<h2>Коллекция</h2>`;
   if (c.tracks.length) host.appendChild(renderTracks(c.tracks));
-  // TODO(views): секции релизов/артистов/плейлистов из коллекции.
+  if (c.releases.length) host.appendChild(buildGridSection({ title: "Релизы", releases: c.releases }));
+  if (c.artists.length) host.appendChild(buildGridSection({ title: "Исполнители", artists: c.artists }));
+  if (c.playlists.length) host.appendChild(buildGridSection({ title: "Плейлисты", playlists: c.playlists }));
+  if (!c.tracks.length && !c.releases.length && !c.artists.length && !c.playlists.length) {
+    host.innerHTML += `<div class="empty">Пусто</div>`;
+  }
 }

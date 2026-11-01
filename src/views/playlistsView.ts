@@ -9,5 +9,6 @@ export async function render(host: HTMLElement) {
     host.innerHTML += `<div class="empty">Пусто</div>`;
     return;
   }
-  host.appendChild(buildGridSection({ playlists }));
+  // buildGridSection для плейлистов показывает количество треков в подписи.
+  host.appendChild(buildGridSection({ title: "Мои плейлисты", playlists }));
 }

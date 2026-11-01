@@ -126,8 +126,11 @@ input:focus { outline: 2px solid var(--accent); border-color: transparent; }
   grid-column: 2;
   background: var(--bg-elev); border-top: 1px solid #26262e;
   display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; gap: 16px; padding: 0 20px;
+  position: relative;
 }
 .pb-track { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pb-ctrl.active { color: var(--accent); }
+.pb-repeat-label { position: absolute; right: 20px; bottom: 6px; font-size: 11px; color: var(--text-dim); }
 .pb-track img { width: 52px; height: 52px; border-radius: 8px; background: #2b2b33; object-fit: cover; }
 .pb-track .name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pb-track .artist { font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -155,6 +158,10 @@ input:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
 /* Empty / states */
 .empty { color: var(--text-dim); text-align: center; padding: 60px 0; font-size: 14px; }
+
+/* Sections */
+.section { margin-bottom: 28px; }
+.section > .search-section-title { margin-top: 0; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 10px; }
