@@ -96,6 +96,27 @@ export const documents: Record<string, string> = {
       }
     }
   `,
+  getRadioByTrack: `
+    query getRadioByTrack($id: ID!, $first: Int) {
+      getRadioByTrack(id: $id, first: $first) {
+        tracks { id title artist artistName duration image { src } }
+      }
+    }
+  `,
+  getArtistReleases: `
+    query getArtistReleases($id: ID!, $first: Int) {
+      getArtistReleases(id: $id, first: $first) {
+        releases { id title artist image { src } type year }
+      }
+    }
+  `,
+  getSearchAutocomplete: `
+    query getSearchAutocomplete($text: String!) {
+      getSearchAutocomplete(text: $text) {
+        items { id type title artist image { src } }
+      }
+    }
+  `,
   addItemToCollection: `
     mutation addItemToCollection($id: ID!, $type: String!) {
       addItemToCollection(id: $id, type: $type) { id }
