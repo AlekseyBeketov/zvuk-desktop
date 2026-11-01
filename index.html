@@ -1,43 +1,49 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="/src/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri App</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <title>Zvuk Desktop</title>
     <script type="module" src="/src/main.ts" defer></script>
   </head>
-
   <body>
-    <main class="container">
-      <h1>Welcome to Tauri</h1>
-
-      <div class="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/src/assets/vite.svg" class="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img
-            src="/src/assets/tauri.svg"
-            class="logo tauri"
-            alt="Tauri logo"
-          />
-        </a>
-        <a href="https://www.typescriptlang.org/docs" target="_blank">
-          <img
-            src="/src/assets/typescript.svg"
-            class="logo typescript"
-            alt="typescript logo"
-          />
-        </a>
+    <!-- Авторизация -->
+    <div id="auth-overlay" class="auth-overlay hidden">
+      <div class="auth-card">
+        <h1>Zvuk <span>Desktop</span></h1>
+        <p class="auth-hint">
+          Войдите в Zvuk: вставьте X-Auth-Token из профиля (или войдите в браузере и скопируйте токен),
+          токен сохранится в macOS Keychain.
+        </p>
+        <button id="auth-open-browser" class="btn primary">Открыть zvuk.com</button>
+        <div class="auth-sep">или</div>
+        <input id="auth-token-input" type="password" placeholder="Вставьте X-Auth-Token" autocomplete="off" />
+        <button id="auth-save-token" class="btn">Войти</button>
+        <p id="auth-status" class="auth-status"></p>
       </div>
-      <p>Click on the Tauri logo to learn more about the framework</p>
+    </div>
 
-      <form class="row" id="greet-form">
-        <input id="greet-input" placeholder="Enter a name..." />
-        <button type="submit">Greet</button>
-      </form>
-      <p id="greet-msg"></p>
-    </main>
+    <!-- Каркас приложения -->
+    <div id="app" class="app hidden">
+      <aside class="sidebar">
+        <div class="brand">Zvuk <span>Desktop</span></div>
+        <nav id="nav" class="nav">
+          <a href="#/home" class="nav-item" data-route="home">Главная</a>
+          <a href="#/search" class="nav-item" data-route="search">Поиск</a>
+          <a href="#/collection" class="nav-item" data-route="collection">Коллекция</a>
+          <a href="#/playlists" class="nav-item" data-route="playlists">Плейлисты</a>
+          <a href="#/podcasts" class="nav-item" data-route="podcasts">Подкасты</a>
+          <a href="#/settings" class="nav-item" data-route="settings">Настройки</a>
+        </nav>
+        <div class="sidebar-foot">
+          <button id="logout" class="nav-item" data-route="logout">Выйти</button>
+        </div>
+      </aside>
+      <main id="content" class="content"></main>
+      <footer id="player-bar" class="player-bar"></footer>
+    </div>
+
+    <audio id="audio" preload="none"></audio>
   </body>
 </html>
