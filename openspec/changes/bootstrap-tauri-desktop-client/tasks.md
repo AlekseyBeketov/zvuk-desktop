@@ -51,5 +51,17 @@
 ## 8. Качество и поставка
 
 - [x] 8.1 Индекс Graphify/CodeGraph/tgrep по репозиторию; правила в AGENTS.md (граф в graphify-out/; конвенции в AGENTS.md)
-- [ ] 8.2 CI-скрипты: fmt/clippy/test; сборка .app/.dmg (codesign — по наличию сертификата) — осталось
+- [x] 8.2 Сборка .app/.dmg выполнена: Zvuk Desktop.app (arm64) + Zvuk Desktop_0.1.0_aarch64.dmg (CRC OK). CI (fmt/clippy/test в pipeline) и codesign — осталось (нужен сертификат разработчика)
 - [x] 8.3 README: установка, вход, ограничения, юридическая заметка
+
+## Итог
+
+Готово: каркас Tauri 2 (Rust+TS), авторизация (токен → Keychain, refresh), GraphQL-клиент
+с терпимым парсингом, экраны (главная/поиск/коллекция/плейлисты/подкасты/детали релиза,
+артиста, плейлиста, подкаста), плеер (HTML5 audio + очередь/shuffle/repeat/seek),
+media keys + Now Playing (souvlaki). Артефакты: .app и .dmg собраны.
+
+Осталось (требует живого аккаунта/сертификата):
+- 1.3/2.4 — реальный запуск и вход своим аккаунтом (интерактивно, за пользователем);
+- 3.5 — снапшот-тесты схем на живом аккаунте;
+- 8.2 — CI pipeline и codesign/notarization (нужен Developer ID).
