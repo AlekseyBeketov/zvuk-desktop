@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window",
+  "description": "Capability for the main window. ПРИМЕЧАНИЕ: фронтенд ходит к zvuk.com напрямую из webview-контекста (fetch с credentials, см. src/api/client.ts), нативные сети не используются, поэтому tauri-plugin-http НЕ подключён и http-пермишн здесь не нужен. ЕСЛИ в будущем запросы должны идти через Rust/http-плагин — добавьте tauri-plugin-http в Cargo.toml/package.json и сюда permission 'http:default' со scope allow: https://zvuk.com, https://*.zvuk.com, https://cdn-new.zvuk.com",
   "windows": ["main"],
   "permissions": [
     "core:default",
