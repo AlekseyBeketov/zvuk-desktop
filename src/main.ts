@@ -136,7 +136,12 @@ async function startApp() {
 
 function bindAuthUI() {
   document.getElementById("auth-open-browser")!.addEventListener("click", () => {
-    window.open("https://zvuk.com", "_blank");
+    // Вход происходит внутри окна приложения (Sber ID), WAF проходит нативно,
+    // cookies остаются в cookie-store webview → Rust-прокси их использует.
+    api.openLogin().catch((e) => {
+      const status = document.getElementById("auth-status")!;
+      status.textContent = `Не удалось открыть окно входа: ${e}`;
+    });
   });
   document.getElementById("auth-save-token")!.addEventListener("click", async () => {
     const input = document.getElementById("auth-token-input") as HTMLInputElement;
@@ -158,6 +163,16 @@ function bindAuthUI() {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
+  let started = false;
+  // Вход через окно приложения: Rust сохраняет токен в Keychain и шлёт login-success.
+  const { listen } = await import("@tauri-apps/api/event");
+  await listen("login-success", async () => {
+    const profile = await api.loadStoredCredentials();
+    if (profile && !started) {
+      started = true;
+      await startApp();
+    }
+  });
   const profile = await api.loadStoredCredentials();
   if (profile) {
     await startApp();

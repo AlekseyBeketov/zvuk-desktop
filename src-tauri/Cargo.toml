@@ -26,6 +26,8 @@ keyring = "4"
 souvlaki = "0.9"
 tokio = { version = "1", features = ["full"] }
 log = "0.4"
+reqwest = { version = "0.12", features = ["json", "gzip"] }
+url = "2"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

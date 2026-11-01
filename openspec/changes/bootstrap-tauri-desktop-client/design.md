@@ -20,11 +20,17 @@
 
 ## Decisions
 
-### D1. Сетевой слой — webview-first
-**Выбор**: API-запросы выполняются из webview-контекста (frontend `fetch` с credentials),
-Rust-бэкенд не дублирует HTTP-клиент к zvuk.com.
-**Почему**: WAF требует cookies после JS-челленджа; webview получает их автоматически.
-**Последствия**: Rust получает stream-URL от frontend и отвечает только за аудио и OS-интеграцию.
+### D1v2. Сетевой слой — worker-webview мост (замена D1 после живой проверки)
+**Факт из живой проверки:** WAF Servicepipe привязан к TLS-отпечатку клиента — даже с полными
+cookies браузера curl/reqwest получают 307-челлендж. CORS при этом не проблема: сервер эхом
+отдаёт `access-control-allow-origin`.
+**Выбор**: все API-запросы выполняются в скрытом worker-webview, загруженном с `zvuk.com`
+(same-origin fetch, cookies, настоящий WebKit-отпечаток). Rust-команда `api_fetch` доставляет
+JS в worker через `eval_with_callback` (результат промиса возвращается в Rust) и отдаёт ответ
+фронту. Логин — видимое окно на zvuk.com (Sber ID); после успеха Rust сохраняет токен в
+Keychain и шлёт `login-success`.
+**Последствия**: фронт вообще не ходит в сеть; reqwest убран из контура (dependency может
+потребоваться позже для стрима — пока не подключён).
 
 ### D2. Аудио — webview `<audio>` в первой итерации
 **Выбор**: воспроизведение HTML5 Audio в webview; stream-URL отдаётся командой Tauri.

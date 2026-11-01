@@ -13,11 +13,11 @@
       <div class="auth-card">
         <h1>Zvuk <span>Desktop</span></h1>
         <p class="auth-hint">
-          Войдите в Zvuk: вставьте X-Auth-Token из профиля (или войдите в браузере и скопируйте токен),
-          токен сохранится в macOS Keychain.
+          Вход выполняется в окне приложения (Sber ID) — cookies и WAF обрабатываются нативно.
+          Токен сохраняется в macOS Keychain.
         </p>
-        <button id="auth-open-browser" class="btn primary">Открыть zvuk.com</button>
-        <div class="auth-sep">или</div>
+        <button id="auth-open-browser" class="btn primary">Войти в окне приложения</button>
+        <div class="auth-sep">или вставьте токен вручную</div>
         <input id="auth-token-input" type="password" placeholder="Вставьте X-Auth-Token" autocomplete="off" />
         <button id="auth-save-token" class="btn">Войти</button>
         <p id="auth-status" class="auth-status"></p>

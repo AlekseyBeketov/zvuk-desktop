@@ -20,20 +20,20 @@ import type {
 /**
  * API-клиент Zvuk.
  *
- * Центральная сложность: WAF Servicepipe защищает zvuk.com JS-челленджем, поэтому
- * ВСЕ запросы должны выполняться из webview-контекста ('credentials: include'),
- * чтобы cookies/челлендж проходили как в PWA. Токен ставится заголовком X-Auth-Token;
- * при 401 — refresh через /web-api/v2/token/refresh и повтор.
+ * Архитектура сети (см. openspec design.md D1v2): WAF Servicepipe привязан к
+ * TLS-отпечатку клиента, поэтому ВСЕ запросы выполняются в worker-webview
+ * (скрытое окно на zvuk.com: same-origin fetch, cookies, настоящий WebKit).
+ * Rust-команда api_fetch — мост; фронт не ходит в сеть сам.
  *
- * Эндпоинты (подтверждены по бандлу, см. docs/research/zvuk-api-open-source.md):
- *  - POST /api/v1/graphql           — каталог/поиск/коллекция/стримы (GraphQL)
+ * Эндпоинты (docs/research/zvuk-api-open-source.md):
+ *  - POST /api/v1/graphql           — каталог/поиск/коллекция/стримы
  *  - GET  /api/tiny/profile         — профиль + токен
- *  - GET  /api/tiny/grid, /content  — главная лента
  *  - GET  /api/tiny/musixmatch/lyrics
  *  - POST /web-api/v2/token/refresh — обновление токена
  */
 const GRAPHQL = "https://zvuk.com/api/v1/graphql";
 const TINY_PROFILE = "https://zvuk.com/api/tiny/profile";
+const TOKEN_REFRESH = "https://zvuk.com/web-api/v2/token/refresh";
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -41,62 +41,46 @@ function setToken(t: string) {
   store.token = t;
 }
 
+/** Базовый вызов через Rust-прокси (worker-webview). */
+async function call(method: "GET" | "POST", url: string, body?: unknown): Promise<any> {
+  return invoke("api_fetch", {
+    method,
+    url,
+    body: body === undefined ? null : body,
+  });
+}
+
 async function refreshToken(): Promise<string | null> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
-    if (!store.token) return null;
-    const res = await fetch("https://zvuk.com/web-api/v2/token/refresh", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Auth-Token": store.token },
-      credentials: "include",
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const token: string = json?.token ?? json?.access_token ?? null;
-    if (token) {
-      setToken(token);
-      await invoke("save_credentials", { token, refreshToken: null }).catch(() => {});
+    try {
+      const json = await call("POST", TOKEN_REFRESH, {});
+      const token: string | null = json?.token ?? json?.access_token ?? null;
+      if (token) {
+        setToken(token);
+        await invoke("save_credentials", { token, refreshToken: null }).catch(() => {});
+      }
+      return token;
+    } catch {
+      return null;
     }
-    return token;
   })().finally(() => { refreshPromise = null; });
   return refreshPromise;
 }
 
-/** POST запрос к API из webview-контекста; повтор после refresh при 401. */
-async function post(path: string, body: unknown, useGraphql = false): Promise<any> {
-  const doFetch = async (): Promise<any> => {
-    const res = await fetch(path, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Auth-Token": store.token,
-        "x-app-name": "web",
-        ...(useGraphql ? {} : {}),
-      },
-      credentials: "include",
-      body: JSON.stringify(body),
-    });
-    if (res.status === 401) {
+/** POST с авто-refresh при 401 и одним повтором. */
+async function post(path: string, body: unknown): Promise<any> {
+  try {
+    return await call("POST", path, body);
+  } catch (e) {
+    const msg = String(e);
+    if (msg.includes("HTTP 401")) {
       const fresh = await refreshToken();
-      if (fresh) {
-        const retry = await fetch(path, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Auth-Token": store.token,
-            "x-app-name": "web",
-          },
-          credentials: "include",
-          body: JSON.stringify(body),
-        });
-        if (retry.ok) return retry.json();
-      }
+      if (fresh) return call("POST", path, body);
       throw new Error("AUTH_REQUIRED");
     }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  };
-  return doFetch();
+    throw e;
+  }
 }
 
 /** GraphQL-запрос по имени операции + переменным (документы в operations.ts). */
@@ -104,12 +88,17 @@ async function gql(operationName: string, variables: Record<string, unknown>): P
   const { documents } = await import("./operations");
   const doc = documents[operationName];
   if (!doc) throw new Error(`Unknown operation ${operationName}`);
-  return post(GRAPHQL, { query: doc, operationName, variables }, true);
+  return post(GRAPHQL, { query: doc, operationName, variables });
 }
 
 /* ------------------------------------------------------------------ */
 /* Авторизация и профиль                                                */
 /* ------------------------------------------------------------------ */
+
+/** Открыть окно логина (вход через Sber ID внутри приложения). */
+export function openLogin(): Promise<void> {
+  return invoke("open_login").then(() => undefined);
+}
 
 /** Проверить сохранённый в Keychain токен; вернуть профиль или null. */
 export async function loadStoredCredentials(): Promise<Profile | null> {
@@ -132,17 +121,8 @@ export async function loginWithToken(token: string): Promise<Profile | null> {
 
 export async function fetchProfile(): Promise<Profile | null> {
   try {
-    const res = await fetch(TINY_PROFILE, {
-      headers: { "X-Auth-Token": store.token, "x-app-name": "web" },
-      credentials: "include",
-    });
-    if (res.status === 401) {
-      const fresh = await refreshToken();
-      if (!fresh) return null;
-    }
-    if (!res.ok) return null;
-    const json = await res.json();
-    store.profile = json?.profile ?? json ?? null;
+    const json = await call("GET", TINY_PROFILE);
+    store.profile = (json?.result ?? json?.profile ?? json) ?? null;
     return store.profile;
   } catch {
     return null;
@@ -347,12 +327,10 @@ export async function likeTrack(id: string, like: boolean): Promise<void> {
 /** Тексты песен через Tiny API (Musixmatch). */
 export async function getLyrics(trackId: string): Promise<string | null> {
   try {
-    const res = await fetch(
-      `https://zvuk.com/api/tiny/musixmatch/lyrics?trackId=${encodeURIComponent(trackId)}`,
-      { headers: { "X-Auth-Token": store.token, "x-app-name": "web" }, credentials: "include" }
+    const json = await call(
+      "GET",
+      `https://zvuk.com/api/tiny/musixmatch/lyrics?trackId=${encodeURIComponent(trackId)}`
     );
-    if (!res.ok) return null;
-    const json = await res.json();
     return json?.lyrics ?? json?.text ?? null;
   } catch {
     return null;
